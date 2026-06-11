@@ -18,32 +18,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 5));
+
     if (!mounted) return;
-    
-    // We can use the stream provider to check the state, 
-    // but for splash logic, usually we check once.
-    final authState = ref.read(authStateProvider);
-    
-    authState.when(
-      data: (user) {
-        if (user != null) {
-          // If user exists, we might need to check if profile is created
-          // For now, redirect to login or home (if it existed)
-          // Since we only have auth, let's go to Login for now if not authenticated
-          context.go('/login');
-        } else {
-          context.go('/login');
-        }
-      },
-      loading: () {},
-      error: (_, __) => context.go('/login'),
-    );
+
+    context.go('/login');
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Center(
         child: TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
@@ -62,12 +47,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Image.asset(
-                'assets/images/app_logo1.png',
-                width: 200,
-                height: 200,
+                'assets/images/app_logo2.png',
+                width: 300,
+                height: 300,
               ),
               const SizedBox(height: 30),
-              const CircularProgressIndicator(),
+              // const CircularProgressIndicator(),
             ],
           ),
         ),

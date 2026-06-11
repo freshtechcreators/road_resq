@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:road_resq/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:road_resq/features/auth/domain/repositories/auth_repository.dart';
@@ -12,6 +13,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(
     FirebaseAuth.instance,
     FirebaseFirestore.instance,
+    FirebaseStorage.instance,
   );
 });
 

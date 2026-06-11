@@ -4,6 +4,8 @@ class UserEntity {
   final String? name;
   final String? email;
   final String? profileImageUrl;
+  final String role;
+  final DateTime? createdAt;
 
   UserEntity({
     required this.uid,
@@ -11,6 +13,8 @@ class UserEntity {
     this.name,
     this.email,
     this.profileImageUrl,
+    this.role = 'user',
+    this.createdAt,
   });
 
   UserEntity copyWith({
@@ -19,6 +23,8 @@ class UserEntity {
     String? name,
     String? email,
     String? profileImageUrl,
+    String? role,
+    DateTime? createdAt,
   }) {
     return UserEntity(
       uid: uid ?? this.uid,
@@ -26,6 +32,8 @@ class UserEntity {
       name: name ?? this.name,
       email: email ?? this.email,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      role: role ?? this.role,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

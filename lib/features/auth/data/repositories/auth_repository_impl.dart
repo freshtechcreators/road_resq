@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:road_resq/features/auth/data/models/mechanic_model.dart';
 import 'package:road_resq/features/auth/data/models/user_model.dart';
 import 'package:road_resq/features/auth/domain/entities/mechanic_entity.dart';
@@ -9,8 +11,9 @@ import 'package:road_resq/features/auth/domain/repositories/auth_repository.dart
 class AuthRepositoryImpl implements AuthRepository {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
+  final FirebaseStorage _storage;
 
-  AuthRepositoryImpl(this._auth, this._firestore);
+  AuthRepositoryImpl(this._auth, this._firestore, this._storage);
 
   @override
   Future<void> sendOTP(String phoneNumber, {
@@ -54,6 +57,13 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> saveMechanicProfile(MechanicEntity mechanic) async {
     final mechanicModel = MechanicModel.fromEntity(mechanic);
     await _firestore.collection('mechanics').doc(mechanic.uid).set(mechanicModel.toMap());
+  }
+
+  @override
+  Future<String> uploadProfileImage(File imageFile, String uid) async {
+    final ref = _storage.ref().child('profile_images').child('$uid.jpg');
+    final uploadTask = await ref.putFile(imageFile);
+    return await uploadTask.ref.getDownloadURL();
   }
 
   @override

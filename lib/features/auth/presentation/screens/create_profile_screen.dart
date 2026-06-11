@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:road_resq/features/auth/domain/entities/mechanic_entity.dart';
 import 'package:road_resq/features/auth/domain/entities/user_entity.dart';
 import 'package:road_resq/features/auth/presentation/providers/auth_provider.dart';
@@ -18,7 +21,17 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
   final _emailController = TextEditingController();
   final _shopNameController = TextEditingController();
   final _specializationController = TextEditingController();
+  File? _imageFile;
   bool _isLoading = false;
+
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
@@ -35,14 +48,23 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
     final saveProfile = ref.read(saveProfileUseCaseProvider);
 
     try {
+      String? imageUrl;
+      if (_imageFile != null) {
+        imageUrl = await saveProfile.uploadImage(_imageFile!, currentUser.uid);
+      }
+
       if (role == 'user') {
         final user = UserEntity(
           uid: currentUser.uid,
           phoneNumber: currentUser.phoneNumber ?? '',
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
+          profileImageUrl: imageUrl,
         );
         await saveProfile.saveUser(user);
+        
+        if (!mounted) return;
+        context.go('/vehicles');
       } else {
         final mechanic = MechanicEntity(
           uid: currentUser.uid,
@@ -51,17 +73,23 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
           shopName: _shopNameController.text.trim(),
           email: _emailController.text.trim(),
           specialization: _specializationController.text.trim(),
+          profileImageUrl: imageUrl,
         );
         await saveProfile.saveMechanic(mechanic);
+        
+        if (!mounted) return;
+        // For mechanic, we might go to a different dashboard, 
+        // but task says "vehicle module page" usually implies user. 
+        // Following instructions literally for "vehicle module page".
+        context.go('/vehicles');
       }
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile Created Successfully!')),
       );
-      // Here you would navigate to the Home screen if it existed.
-      // Since it doesn't, we just stop here as per instructions.
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
       );
@@ -81,22 +109,37 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                'Tell us more about you',
-                style: Theme.of(context).textTheme.headlineSmall,
+              GestureDetector(
+                onTap: _pickImage,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.grey[200],
+                  backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
+                  child: _imageFile == null
+                      ? const Icon(Icons.camera_alt, size: 40, color: Colors.grey)
+                      : null,
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
+              const Text('Upload Profile Image'),
+              const SizedBox(height: 30),
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Full Name'),
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  border: OutlineInputBorder(),
+                ),
                 validator: (value) => value == null || value.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 15),
               TextFormField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email Address'),
+                decoration: const InputDecoration(
+                  labelText: 'Email Address',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) => value == null || value.isEmpty ? 'Required' : null,
               ),
@@ -104,23 +147,30 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
                 const SizedBox(height: 15),
                 TextFormField(
                   controller: _shopNameController,
-                  decoration: const InputDecoration(labelText: 'Shop Name'),
+                  decoration: const InputDecoration(
+                    labelText: 'Shop Name',
+                    border: OutlineInputBorder(),
+                  ),
                   validator: (value) => value == null || value.isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 15),
                 TextFormField(
                   controller: _specializationController,
-                  decoration: const InputDecoration(labelText: 'Specialization (e.g., Bike, Car, EV)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Specialization (e.g., Bike, Car, EV)',
+                    border: OutlineInputBorder(),
+                  ),
                   validator: (value) => value == null || value.isEmpty ? 'Required' : null,
                 ),
               ],
               const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
+                height: 50,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _saveProfile,
                   child: _isLoading
-                      ? const CircularProgressIndicator()
+                      ? const CircularProgressIndicator(color: Colors.white)
                       : const Text('Complete Profile'),
                 ),
               ),

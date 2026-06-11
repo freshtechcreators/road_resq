@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:road_resq/features/auth/domain/entities/user_entity.dart';
 import 'package:road_resq/features/auth/domain/entities/mechanic_entity.dart';
 
@@ -14,6 +15,8 @@ abstract class AuthRepository {
 
   Future<void> saveUserProfile(UserEntity user);
   Future<void> saveMechanicProfile(MechanicEntity mechanic);
+
+  Future<String> uploadProfileImage(File imageFile, String uid);
 
   Stream<UserEntity?> get authStateChanges;
   Future<void> signOut();

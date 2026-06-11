@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:road_resq/features/auth/domain/entities/user_entity.dart';
 import 'package:road_resq/features/auth/domain/entities/mechanic_entity.dart';
 import 'package:road_resq/features/auth/domain/repositories/auth_repository.dart';
@@ -13,5 +14,9 @@ class SaveProfileUseCase {
 
   Future<void> saveMechanic(MechanicEntity mechanic) {
     return repository.saveMechanicProfile(mechanic);
+  }
+
+  Future<String> uploadImage(File image, String uid) {
+    return repository.uploadProfileImage(image, uid);
   }
 }
