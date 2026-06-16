@@ -6,7 +6,7 @@ class UserModel extends UserEntity {
     required super.phoneNumber,
     super.name,
     super.email,
-    super.profileImageUrl,
+    super.profileImage,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
@@ -15,7 +15,7 @@ class UserModel extends UserEntity {
       phoneNumber: map['phoneNumber'] ?? '',
       name: map['name'],
       email: map['email'],
-      profileImageUrl: map['profileImageUrl'],
+      profileImage: map['profileImage'],
     );
   }
 
@@ -25,7 +25,7 @@ class UserModel extends UserEntity {
       'phoneNumber': phoneNumber,
       'name': name,
       'email': email,
-      'profileImageUrl': profileImageUrl,
+      'profileImage': profileImage,
     };
   }
 
@@ -35,7 +35,7 @@ class UserModel extends UserEntity {
       phoneNumber: entity.phoneNumber,
       name: entity.name,
       email: entity.email,
-      profileImageUrl: entity.profileImageUrl,
+      profileImage: entity.profileImage,
     );
   }
 }

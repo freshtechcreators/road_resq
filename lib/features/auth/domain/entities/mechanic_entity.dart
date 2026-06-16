@@ -4,9 +4,10 @@ class MechanicEntity {
   final String? name;
   final String? shopName;
   final String? email;
-  final String? profileImageUrl;
+  final String? profileImage;
   final String? specialization;
-
+  final List<String>? services;
+  final String? experience;
   final bool isApproved;
   final bool isOnline;
   final String role;
@@ -18,8 +19,10 @@ class MechanicEntity {
     this.name,
     this.shopName,
     this.email,
-    this.profileImageUrl,
+    this.profileImage,
     this.specialization,
+    this.services,
+    this.experience,
     this.isApproved = false,
     this.isOnline = false,
     this.role = 'mechanic',
@@ -32,8 +35,10 @@ class MechanicEntity {
     String? name,
     String? shopName,
     String? email,
-    String? profileImageUrl,
+    String? profileImage,
     String? specialization,
+    List<String>? services,
+    String? experience,
     bool? isApproved,
     bool? isOnline,
     String? role,
@@ -45,8 +50,10 @@ class MechanicEntity {
       name: name ?? this.name,
       shopName: shopName ?? this.shopName,
       email: email ?? this.email,
-      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      profileImage: profileImage ?? this.profileImage,
       specialization: specialization ?? this.specialization,
+      services: services ?? this.services,
+      experience: experience ?? this.experience,
       isApproved: isApproved ?? this.isApproved,
       isOnline: isOnline ?? this.isOnline,
       role: role ?? this.role,

@@ -1,4 +1,5 @@
-import 'package:road_resq/features/auth/domain/entities/mechanic_entity.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../domain/entities/mechanic_entity.dart';
 
 class MechanicModel extends MechanicEntity {
   MechanicModel({
@@ -7,8 +8,13 @@ class MechanicModel extends MechanicEntity {
     super.name,
     super.shopName,
     super.email,
-    super.profileImageUrl,
-    super.specialization,
+    super.profileImage,
+    super.services,
+    super.experience,
+    super.isApproved,
+    super.isOnline,
+    super.role,
+    super.createdAt,
   });
 
   factory MechanicModel.fromMap(Map<String, dynamic> map) {
@@ -18,8 +24,13 @@ class MechanicModel extends MechanicEntity {
       name: map['name'],
       shopName: map['shopName'],
       email: map['email'],
-      profileImageUrl: map['profileImageUrl'],
-      specialization: map['specialization'],
+      profileImage: map['profileImage'],
+      services: map['services'] != null ? List<String>.from(map['services']) : null,
+      experience: map['experience'],
+      isApproved: map['isApproved'] ?? false,
+      isOnline: map['isOnline'] ?? false,
+      role: map['role'] ?? 'mechanic',
+      createdAt: map['createdAt'] != null ? (map['createdAt'] as Timestamp).toDate() : null,
     );
   }
 
@@ -30,8 +41,13 @@ class MechanicModel extends MechanicEntity {
       'name': name,
       'shopName': shopName,
       'email': email,
-      'profileImageUrl': profileImageUrl,
-      'specialization': specialization,
+      'profileImage': profileImage,
+      'services': services,
+      'experience': experience,
+      'isApproved': isApproved,
+      'isOnline': isOnline,
+      'role': role,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
     };
   }
 
@@ -42,8 +58,13 @@ class MechanicModel extends MechanicEntity {
       name: entity.name,
       shopName: entity.shopName,
       email: entity.email,
-      profileImageUrl: entity.profileImageUrl,
-      specialization: entity.specialization,
+      profileImage: entity.profileImage,
+      services: entity.services,
+      experience: entity.experience,
+      isApproved: entity.isApproved,
+      isOnline: entity.isOnline,
+      role: entity.role,
+      createdAt: entity.createdAt,
     );
   }
 }

@@ -46,6 +46,26 @@ class BookingStatusScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 _buildDetailsCard(booking),
                 const SizedBox(height: 32),
+
+                // Track Mechanic Button - Only visible when mechanic is arriving
+                if (booking.status == BookingStatus.ARRIVING)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => context.push('/tracking/${booking.bookingId}'),
+                        icon: const Icon(Icons.location_on),
+                        label: const Text('Track Mechanic Live'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ),
+
                 if (booking.status == BookingStatus.REQUESTED)
                   SizedBox(
                     width: double.infinity,

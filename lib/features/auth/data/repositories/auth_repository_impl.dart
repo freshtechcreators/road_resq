@@ -6,7 +6,7 @@ import 'package:road_resq/features/auth/data/models/mechanic_model.dart';
 import 'package:road_resq/features/auth/data/models/user_model.dart';
 import 'package:road_resq/features/auth/domain/entities/mechanic_entity.dart';
 import 'package:road_resq/features/auth/domain/entities/user_entity.dart';
-import 'package:road_resq/features/auth/domain/repositories/auth_repository.dart';
+import '../../domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final FirebaseAuth _auth;
@@ -61,9 +61,43 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<String> uploadProfileImage(File imageFile, String uid) async {
-    final ref = _storage.ref().child('profile_images').child('$uid.jpg');
-    final uploadTask = await ref.putFile(imageFile);
-    return await uploadTask.ref.getDownloadURL();
+    try {
+      final ref = _storage.ref().child('profile_images').child('$uid.jpg');
+      final snapshot = await ref.putFile(imageFile);
+      final url = await snapshot.ref.getDownloadURL();
+      return url;
+    } on FirebaseException catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String?> getUserRole(String uid) async {
+    final userDoc = await _firestore.collection('users').doc(uid).get();
+    if (userDoc.exists) return 'user';
+
+    final mechanicDoc = await _firestore.collection('mechanics').doc(uid).get();
+    if (mechanicDoc.exists) return 'mechanic';
+
+    return null;
+  }
+
+  @override
+  Future<UserEntity?> getUserProfile(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    if (doc.exists && doc.data() != null) {
+      return UserModel.fromMap(doc.data()!);
+    }
+    return null;
+  }
+
+  @override
+  Future<MechanicEntity?> getMechanicProfile(String uid) async {
+    final doc = await _firestore.collection('mechanics').doc(uid).get();
+    if (doc.exists && doc.data() != null) {
+      return MechanicModel.fromMap(doc.data()!);
+    }
+    return null;
   }
 
   @override

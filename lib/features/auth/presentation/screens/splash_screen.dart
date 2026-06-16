@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,11 +19,32 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(seconds: 5));
+    // Increased delay slightly for branding/loading feel
+    await Future.delayed(const Duration(seconds: 3));
 
     if (!mounted) return;
 
-    context.go('/login');
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      // Not logged in
+      context.go('/login');
+    } else {
+      // Logged in, check if profile exists and what role
+      final authRepo = ref.read(authRepositoryProvider);
+      final role = await authRepo.getUserRole(currentUser.uid);
+
+      if (!mounted) return;
+
+      if (role == 'user') {
+        context.go('/vehicles');
+      } else if (role == 'mechanic') {
+        context.go('/mechanic-dashboard');
+      } else {
+        // Logged in but profile not completed
+        context.go('/create-profile');
+      }
+    }
   }
 
   @override
@@ -52,7 +74,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 height: 300,
               ),
               const SizedBox(height: 30),
-              // const CircularProgressIndicator(),
+              const CircularProgressIndicator(color: Colors.white),
             ],
           ),
         ),

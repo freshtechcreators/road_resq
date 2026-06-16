@@ -5,6 +5,7 @@ class BookingModel extends BookingEntity {
   BookingModel({
     required super.bookingId,
     required super.userId,
+    super.mechanicId,
     required super.vehicleId,
     required super.issueType,
     required super.latitude,
@@ -15,14 +16,17 @@ class BookingModel extends BookingEntity {
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
     return BookingModel(
-      bookingId: json['bookingId'],
-      userId: json['userId'],
-      vehicleId: json['vehicleId'],
-      issueType: IssueType.values.byName(json['issueType']),
-      latitude: json['latitude'],
-      longitude: json['longitude'],
-      status: BookingStatus.values.byName(json['status']),
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
+      bookingId: json['bookingId'] ?? '',
+      userId: json['userId'] ?? '',
+      mechanicId: json['mechanicId'],
+      vehicleId: json['vehicleId'] ?? '',
+      issueType: IssueType.values.byName(json['issueType'] ?? IssueType.FLAT_TIRE.name),
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      status: BookingStatus.values.byName(json['status'] ?? BookingStatus.REQUESTED.name),
+      createdAt: json['createdAt'] != null 
+          ? (json['createdAt'] as Timestamp).toDate() 
+          : DateTime.now(),
     );
   }
 
@@ -30,6 +34,7 @@ class BookingModel extends BookingEntity {
     return {
       'bookingId': bookingId,
       'userId': userId,
+      'mechanicId': mechanicId,
       'vehicleId': vehicleId,
       'issueType': issueType.name,
       'latitude': latitude,
@@ -43,6 +48,7 @@ class BookingModel extends BookingEntity {
     return BookingModel(
       bookingId: entity.bookingId,
       userId: entity.userId,
+      mechanicId: entity.mechanicId,
       vehicleId: entity.vehicleId,
       issueType: entity.issueType,
       latitude: entity.latitude,

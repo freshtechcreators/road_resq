@@ -6,6 +6,7 @@ import '../../domain/usecases/create_booking_usecase.dart';
 import '../../domain/usecases/get_booking_stream_usecase.dart';
 import '../../domain/usecases/update_booking_status_usecase.dart';
 import '../../domain/entities/booking_entity.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
   return BookingRepositoryImpl(FirebaseFirestore.instance);
@@ -25,4 +26,10 @@ final updateBookingStatusUseCaseProvider = Provider<UpdateBookingStatusUseCase>(
 
 final currentBookingStreamProvider = StreamProvider.family<BookingEntity?, String>((ref, bookingId) {
   return ref.watch(getBookingStreamUseCaseProvider).call(bookingId);
+});
+
+final userBookingsProvider = StreamProvider<List<BookingEntity>>((ref) {
+  final user = ref.watch(authStateProvider).value;
+  if (user == null) return Stream.value([]);
+  return ref.watch(bookingRepositoryProvider).getUserBookings(user.uid);
 });

@@ -8,6 +8,7 @@ import 'package:road_resq/features/auth/domain/usecases/save_profile_usecase.dar
 import 'package:road_resq/features/auth/domain/usecases/send_otp_usecase.dart';
 import 'package:road_resq/features/auth/domain/usecases/verify_otp_usecase.dart';
 import 'package:road_resq/features/auth/domain/entities/user_entity.dart';
+import 'package:road_resq/features/auth/domain/entities/mechanic_entity.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(
@@ -31,6 +32,18 @@ final saveProfileUseCaseProvider = Provider<SaveProfileUseCase>((ref) {
 
 final authStateProvider = StreamProvider<UserEntity?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
+});
+
+final userProfileProvider = FutureProvider<UserEntity?>((ref) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return null;
+  return ref.watch(authRepositoryProvider).getUserProfile(user.uid);
+});
+
+final mechanicProfileProvider = FutureProvider<MechanicEntity?>((ref) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return null;
+  return ref.watch(authRepositoryProvider).getMechanicProfile(user.uid);
 });
 
 final verificationIdProvider = StateProvider<String?>((ref) => null);

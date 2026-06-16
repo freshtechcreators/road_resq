@@ -7,7 +7,14 @@ import 'package:road_resq/features/auth/presentation/screens/create_profile_scre
 import 'package:road_resq/features/booking/presentation/screens/sos_screen.dart';
 import 'package:road_resq/features/booking/presentation/screens/issue_selection_screen.dart';
 import 'package:road_resq/features/booking/presentation/screens/booking_status_screen.dart';
+import 'package:road_resq/features/mechanic/presentation/screens/mechanic_dashboard.dart';
+import 'package:road_resq/features/mechanic/presentation/screens/request_list_screen.dart';
+import 'package:road_resq/features/mechanic/presentation/screens/my_bookings_screen.dart';
+import 'package:road_resq/features/mechanic/presentation/screens/booking_details_screen.dart';
+import 'package:road_resq/features/mechanic/presentation/screens/earnings_screen.dart';
+import 'package:road_resq/features/tracking/presentation/screens/live_tracking_screen.dart';
 
+import '../features/booking/presentation/screens/user_bookings_screen.dart';
 import '../features/user/presentation/screens/add_vehicle_screen.dart';
 import '../features/user/presentation/screens/vehicle_list_screen.dart';
 
@@ -58,6 +65,38 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => BookingStatusScreen(
           bookingId: state.pathParameters['bookingId']!,
         ),
+      ),
+      GoRoute(
+        path: '/mechanic-dashboard',
+        builder: (context, state) => const MechanicDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/request-list',
+        builder: (context, state) => const RequestListScreen(),
+      ),
+      GoRoute(
+        path: '/my-bookings',
+        builder: (context, state) => const MyBookingsScreen(),
+      ),
+      GoRoute(
+        path: '/booking-details/:bookingId',
+        builder: (context, state) => BookingDetailsScreen(
+          bookingId: state.pathParameters['bookingId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/earnings',
+        builder: (context, state) => const EarningsScreen(),
+      ),
+      GoRoute(
+        path: '/tracking/:bookingId',
+        builder: (context, state) => LiveTrackingScreen(
+          bookingId: state.pathParameters['bookingId']!,
+        ),
+      ),
+      GoRoute(
+        path: '/user-bookings',
+        builder: (context, state) => UserBookingsScreen(),
       ),
     ],
   );

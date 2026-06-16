@@ -34,4 +34,22 @@ class BookingRepositoryImpl implements BookingRepository {
       'status': status.name,
     });
   }
+
+  @override
+  Stream<List<BookingEntity>> getUserBookings(String userId) {
+    // Removed .orderBy() to avoid requiring a composite index in Firestore.
+    // Sorting can be done in the UI or Provider.
+    return _firestore
+        .collection('bookings')
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+      final bookings = snapshot.docs
+          .map((doc) => BookingModel.fromJson(doc.data()))
+          .toList();
+      // Sort in memory: newest first
+      bookings.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return bookings;
+    });
+  }
 }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -20,12 +21,30 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _shopNameController = TextEditingController();
-  final _specializationController = TextEditingController();
+  final _experienceController = TextEditingController();
+  final _servicesController = TextEditingController();
   File? _imageFile;
   bool _isLoading = false;
+  String? _base64Image;
+  bool _isEditMode = false;
+  bool _hasInitialized = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _shopNameController.dispose();
+    _experienceController.dispose();
+    _servicesController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 20,
+    );
+
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
@@ -48,9 +67,9 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
     final saveProfile = ref.read(saveProfileUseCaseProvider);
 
     try {
-      String? imageUrl;
       if (_imageFile != null) {
-        imageUrl = await saveProfile.uploadImage(_imageFile!, currentUser.uid);
+        final bytes = await _imageFile!.readAsBytes();
+        _base64Image = base64Encode(bytes);
       }
 
       if (role == 'user') {
@@ -59,35 +78,42 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
           phoneNumber: currentUser.phoneNumber ?? '',
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
-          profileImageUrl: imageUrl,
+          profileImage: _base64Image,
         );
         await saveProfile.saveUser(user);
+        ref.invalidate(userProfileProvider);
         
         if (!mounted) return;
-        context.go('/vehicles');
+        if (_isEditMode) {
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile Updated!')));
+           context.pop();
+        } else {
+           context.go('/vehicles');
+        }
       } else {
+        final services = _servicesController.text.split(',').map((e) => e.trim()).toList();
         final mechanic = MechanicEntity(
           uid: currentUser.uid,
           phoneNumber: currentUser.phoneNumber ?? '',
           name: _nameController.text.trim(),
           shopName: _shopNameController.text.trim(),
           email: _emailController.text.trim(),
-          specialization: _specializationController.text.trim(),
-          profileImageUrl: imageUrl,
+          experience: _experienceController.text.trim(),
+          services: services,
+          profileImage: _base64Image,
+          isApproved: true,
         );
         await saveProfile.saveMechanic(mechanic);
-        
-        if (!mounted) return;
-        // For mechanic, we might go to a different dashboard, 
-        // but task says "vehicle module page" usually implies user. 
-        // Following instructions literally for "vehicle module page".
-        context.go('/vehicles');
-      }
+        ref.invalidate(mechanicProfileProvider);
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile Created Successfully!')),
-      );
+        if (!mounted) return;
+        if (_isEditMode) {
+           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile Updated!')));
+           context.pop();
+        } else {
+           context.go('/mechanic-dashboard');
+        }
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -98,12 +124,39 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
     }
   }
 
+  void _initializeData(String role) {
+    if (_hasInitialized) return;
+    
+    if (role == 'user') {
+      final profile = ref.read(userProfileProvider).value;
+      if (profile != null) {
+        _isEditMode = true;
+        _nameController.text = profile.name ?? '';
+        _emailController.text = profile.email ?? '';
+        _base64Image = profile.profileImage;
+      }
+    } else {
+      final profile = ref.read(mechanicProfileProvider).value;
+      if (profile != null) {
+        _isEditMode = true;
+        _nameController.text = profile.name ?? '';
+        _emailController.text = profile.email ?? '';
+        _shopNameController.text = profile.shopName ?? '';
+        _experienceController.text = profile.experience ?? '';
+        _servicesController.text = profile.services?.join(', ') ?? '';
+        _base64Image = profile.profileImage;
+      }
+    }
+    _hasInitialized = true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final role = ref.watch(userRoleProvider);
+    _initializeData(role);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Profile')),
+      appBar: AppBar(title: Text(_isEditMode ? 'Edit Profile' : 'Create Profile')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Form(
@@ -116,14 +169,18 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
                 child: CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.grey[200],
-                  backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
-                  child: _imageFile == null
+                  backgroundImage: _imageFile != null 
+                      ? FileImage(_imageFile!) 
+                      : (_base64Image != null && _base64Image!.isNotEmpty
+                          ? MemoryImage(base64Decode(_base64Image!))
+                          : null) as ImageProvider?,
+                  child: (_imageFile == null && (_base64Image == null || _base64Image!.isEmpty))
                       ? const Icon(Icons.camera_alt, size: 40, color: Colors.grey)
                       : null,
                 ),
               ),
               const SizedBox(height: 10),
-              const Text('Upload Profile Image'),
+              const Text('Profile Image'),
               const SizedBox(height: 30),
               TextFormField(
                 controller: _nameController,
@@ -155,9 +212,20 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
                 ),
                 const SizedBox(height: 15),
                 TextFormField(
-                  controller: _specializationController,
+                  controller: _experienceController,
                   decoration: const InputDecoration(
-                    labelText: 'Specialization (e.g., Bike, Car, EV)',
+                    labelText: 'Experience (Years)',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                ),
+                const SizedBox(height: 15),
+                TextFormField(
+                  controller: _servicesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Services (comma separated)',
+                    hintText: 'Flat Tire, Oil Change, Engine',
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) => value == null || value.isEmpty ? 'Required' : null,
@@ -171,7 +239,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
                   onPressed: _isLoading ? null : _saveProfile,
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Complete Profile'),
+                      : Text(_isEditMode ? 'Update Profile' : 'Complete Profile'),
                 ),
               ),
             ],

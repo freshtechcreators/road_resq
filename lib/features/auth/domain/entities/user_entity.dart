@@ -3,7 +3,7 @@ class UserEntity {
   final String phoneNumber;
   final String? name;
   final String? email;
-  final String? profileImageUrl;
+  final String? profileImage;
   final String role;
   final DateTime? createdAt;
 
@@ -12,7 +12,7 @@ class UserEntity {
     required this.phoneNumber,
     this.name,
     this.email,
-    this.profileImageUrl,
+    this.profileImage,
     this.role = 'user',
     this.createdAt,
   });
@@ -22,7 +22,7 @@ class UserEntity {
     String? phoneNumber,
     String? name,
     String? email,
-    String? profileImageUrl,
+    String? profileImage,
     String? role,
     DateTime? createdAt,
   }) {
@@ -31,7 +31,7 @@ class UserEntity {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       name: name ?? this.name,
       email: email ?? this.email,
-      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      profileImage: profileImage ?? this.profileImage,
       role: role ?? this.role,
       createdAt: createdAt ?? this.createdAt,
     );

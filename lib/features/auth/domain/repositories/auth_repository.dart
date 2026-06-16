@@ -18,6 +18,10 @@ abstract class AuthRepository {
 
   Future<String> uploadProfileImage(File imageFile, String uid);
 
+  Future<String?> getUserRole(String uid);
+  Future<UserEntity?> getUserProfile(String uid);
+  Future<MechanicEntity?> getMechanicProfile(String uid);
+
   Stream<UserEntity?> get authStateChanges;
   Future<void> signOut();
 }

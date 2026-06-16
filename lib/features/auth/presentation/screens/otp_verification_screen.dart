@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,15 +30,34 @@ class _OTPVerificationScreenState extends ConsumerState<OTPVerificationScreen> {
       );
       
       if (!mounted) return;
-      setState(() => _isLoading = false);
       
-      // Navigate to profile creation after successful OTP verification
-      context.go('/create-profile');
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        final authRepo = ref.read(authRepositoryProvider);
+        final role = await authRepo.getUserRole(currentUser.uid);
+        
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+
+        if (role == 'user') {
+          context.go('/vehicles');
+        } else if (role == 'mechanic') {
+          context.go('/mechanic-dashboard');
+        } else {
+          // No profile found, go to create profile
+          context.go('/create-profile');
+        }
+      } else {
+        setState(() => _isLoading = false);
+        context.go('/login');
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Verification Failed: ${e.toString()}')),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Verification Failed: ${e.toString()}')),
+        );
+      }
     }
   }
 

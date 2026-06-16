@@ -11,7 +11,7 @@ class ProfileRepositoryImpl {
       'name': user.name,
       'email': user.email,
       'phoneNumber': user.phoneNumber,
-      'profileImageUrl': user.profileImageUrl,
+      'profileImage': user.profileImage,
       'role': 'user',
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -24,7 +24,7 @@ class ProfileRepositoryImpl {
       'shopName': mechanic.shopName,
       'email': mechanic.email,
       'phoneNumber': mechanic.phoneNumber,
-      'profileImageUrl': mechanic.profileImageUrl,
+      'profileImage': mechanic.profileImage,
       'specialization': mechanic.specialization,
       'role': 'mechanic',
       'isActive': true,
