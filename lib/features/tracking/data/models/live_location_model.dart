@@ -10,12 +10,20 @@ class LiveLocationModel extends LiveLocationEntity {
   });
 
   factory LiveLocationModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>?;
+    if (data == null) {
+      return LiveLocationModel(
+        mechanicId: doc.id,
+        latitude: 0.0,
+        longitude: 0.0,
+        timestamp: DateTime.now(),
+      );
+    }
     return LiveLocationModel(
-      mechanicId: data['mechanicId'] ?? '',
-      latitude: (data['latitude'] as num).toDouble(),
-      longitude: (data['longitude'] as num).toDouble(),
-      timestamp: (data['timestamp'] as Timestamp).toDate(),
+      mechanicId: data['mechanicId'] ?? doc.id,
+      latitude: (data['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (data['longitude'] as num?)?.toDouble() ?? 0.0,
+      timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 

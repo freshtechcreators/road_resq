@@ -9,6 +9,8 @@ import 'package:road_resq/features/auth/domain/usecases/send_otp_usecase.dart';
 import 'package:road_resq/features/auth/domain/usecases/verify_otp_usecase.dart';
 import 'package:road_resq/features/auth/domain/entities/user_entity.dart';
 import 'package:road_resq/features/auth/domain/entities/mechanic_entity.dart';
+import 'package:road_resq/features/auth/data/models/user_model.dart';
+import 'package:road_resq/features/auth/data/models/mechanic_model.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(
@@ -34,17 +36,48 @@ final authStateProvider = StreamProvider<UserEntity?>((ref) {
   return ref.watch(authRepositoryProvider).authStateChanges;
 });
 
-final userProfileProvider = FutureProvider<UserEntity?>((ref) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return null;
-  return ref.watch(authRepositoryProvider).getUserProfile(user.uid);
+final userRoleProvider = StateProvider<String>((ref) => 'user'); // 'user' or 'mechanic'
+
+final userProfileProvider = StreamProvider<UserEntity?>((ref) {
+  final authState = ref.watch(authStateProvider);
+  final role = ref.watch(userRoleProvider);
+  
+  return authState.when(
+    data: (user) {
+      if (user == null || role != 'user') return Stream.value(null);
+      return FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .snapshots()
+          .map((doc) => doc.exists ? UserModel.fromMap(doc.data()!) : null)
+          .handleError((error) {
+            // Suppress permission-denied errors during logout or role transitions
+          });
+    },
+    loading: () => const Stream.empty(),
+    error: (e, s) => Stream.error(e, s),
+  );
 });
 
-final mechanicProfileProvider = FutureProvider<MechanicEntity?>((ref) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return null;
-  return ref.watch(authRepositoryProvider).getMechanicProfile(user.uid);
+final mechanicProfileProvider = StreamProvider<MechanicEntity?>((ref) {
+  final authState = ref.watch(authStateProvider);
+  final role = ref.watch(userRoleProvider);
+  
+  return authState.when(
+    data: (user) {
+      if (user == null || role != 'mechanic') return Stream.value(null);
+      return FirebaseFirestore.instance
+          .collection('mechanics')
+          .doc(user.uid)
+          .snapshots()
+          .map((doc) => doc.exists ? MechanicModel.fromMap(doc.data()!) : null)
+          .handleError((error) {
+            // Suppress permission-denied errors during logout or role transitions
+          });
+    },
+    loading: () => const Stream.empty(),
+    error: (e, s) => Stream.error(e, s),
+  );
 });
 
 final verificationIdProvider = StateProvider<String?>((ref) => null);
-final userRoleProvider = StateProvider<String>((ref) => 'user'); // 'user' or 'mechanic'

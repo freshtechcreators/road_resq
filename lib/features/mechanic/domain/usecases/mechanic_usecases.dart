@@ -47,5 +47,5 @@ class UpdateBookingStatusUseCase {
 class GetEarningsUseCase {
   final MechanicRepository repository;
   GetEarningsUseCase(this.repository);
-  Future<double> call(String mechanicId) => repository.getEarnings(mechanicId);
+  Stream<double> call(String mechanicId) => repository.getEarnings(mechanicId);
 }

@@ -16,13 +16,17 @@ class TrackingRepositoryImpl implements TrackingRepository {
 
   @override
   Future<void> updateLocation(String mechanicId, double lat, double lng) async {
-    final model = LiveLocationModel(
-      mechanicId: mechanicId,
-      latitude: lat,
-      longitude: lng,
-      timestamp: DateTime.now(),
-    );
-    await _firestore.collection('live_locations').doc(mechanicId).set(model.toFirestore());
+    try {
+      final model = LiveLocationModel(
+        mechanicId: mechanicId,
+        latitude: lat,
+        longitude: lng,
+        timestamp: DateTime.now(),
+      );
+      await _firestore.collection('live_locations').doc(mechanicId).set(model.toFirestore());
+    } catch (e) {
+      print('Firestore updateLocation Error: $e');
+    }
   }
 
   @override
@@ -31,34 +35,40 @@ class TrackingRepositoryImpl implements TrackingRepository {
         .collection('live_locations')
         .doc(mechanicId)
         .snapshots()
-        .map((doc) => LiveLocationModel.fromFirestore(doc));
+        .map((doc) {
+          if (!doc.exists || doc.data() == null) {
+            return LiveLocationModel(
+              mechanicId: mechanicId,
+              latitude: 0,
+              longitude: 0,
+              timestamp: DateTime.now(),
+            );
+          }
+          return LiveLocationModel.fromFirestore(doc);
+        });
   }
 
   @override
   Future<List<double>> getRoutePoints(double startLat, double startLng, double endLat, double endLng) async {
-    // In a real app, you'd use Google Directions API here.
-    // For this task, I'll provide a helper to fetch polyline points if an API key is provided,
-    // otherwise it returns a direct line.
-    
-    if (AppConstants.googleMapsApiKey == 'AIzaSyAv8HSm8p8ct5ZPr799sBk3H2aTaREDbik') {
-       return [startLat, startLng, endLat, endLng];
-    }
-
     final String url =
-        'https://maps.googleapis.com/maps/api/directions/json?origin=$startLat,$startLng&destination=$endLat,$endLng&key=${AppConstants.googleMapsApiKey}';
+        'https://maps.googleapis.com/maps/api/directions/json?origin=$startLat,$startLng&destination=$endLat,$endLng&key=${AppConstants.directionsApiKey}';
 
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data['routes'].isNotEmpty) {
+        if (data['status'] == 'OK' && data['routes'].isNotEmpty) {
           final polyline = data['routes'][0]['overview_polyline']['points'];
           return _decodePolyline(polyline);
+        } else {
+          print('Directions API Error: ${data['status']}');
         }
       }
     } catch (e) {
       print('Error fetching route: $e');
     }
+    
+    // Fallback: Direct line
     return [startLat, startLng, endLat, endLng];
   }
 

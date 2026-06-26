@@ -9,5 +9,5 @@ abstract class MechanicRepository {
   Stream<List<BookingEntity>> getMechanicBookings(String mechanicId);
   Future<void> acceptBooking(String bookingId, String mechanicId);
   Future<void> updateBookingStatus(String bookingId, BookingStatus status);
-  Future<double> getEarnings(String mechanicId);
+  Stream<double> getEarnings(String mechanicId);
 }

@@ -19,29 +19,28 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    // Increased delay slightly for branding/loading feel
-    await Future.delayed(const Duration(seconds: 3));
+    await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
     final currentUser = FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
-      // Not logged in
       context.go('/login');
     } else {
-      // Logged in, check if profile exists and what role
       final authRepo = ref.read(authRepositoryProvider);
       final role = await authRepo.getUserRole(currentUser.uid);
 
       if (!mounted) return;
 
       if (role == 'user') {
+        ref.read(userRoleProvider.notifier).state = 'user';
         context.go('/vehicles');
       } else if (role == 'mechanic') {
+        ref.read(userRoleProvider.notifier).state = 'mechanic';
         context.go('/mechanic-dashboard');
       } else {
-        // Logged in but profile not completed
+        // Logged in but profile not found in either collection
         context.go('/create-profile');
       }
     }

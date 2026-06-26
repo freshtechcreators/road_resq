@@ -40,11 +40,14 @@ class _OTPVerificationScreenState extends ConsumerState<OTPVerificationScreen> {
         setState(() => _isLoading = false);
 
         if (role == 'user') {
+          ref.read(userRoleProvider.notifier).state = 'user';
           context.go('/vehicles');
         } else if (role == 'mechanic') {
+          ref.read(userRoleProvider.notifier).state = 'mechanic';
           context.go('/mechanic-dashboard');
         } else {
-          // No profile found, go to create profile
+          // No profile found, stay on current role or let them choose?
+          // Usually role is selected at login screen, so it's already in userRoleProvider
           context.go('/create-profile');
         }
       } else {

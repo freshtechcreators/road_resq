@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../booking/presentation/providers/booking_provider.dart';
+import '../providers/mechanic_location_update_provider.dart';
 import '../providers/tracking_provider.dart';
 
 class LiveTrackingScreen extends ConsumerStatefulWidget {
@@ -20,25 +22,35 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
   final Set<Polyline> _polylines = {};
   String _eta = 'Calculating...';
   String _distance = '';
-  bool _isInitialCameraSet = false;
 
   @override
   Widget build(BuildContext context) {
     final bookingAsync = ref.watch(currentBookingStreamProvider(widget.bookingId));
     final booking = bookingAsync.value;
+    final role = ref.watch(userRoleProvider);
 
     // Listen to mechanic location updates to update the map
     if (booking != null && booking.mechanicId != null) {
+      // 1. If I am the mechanic, make sure I am broadcasting my location
+      final auth = ref.watch(authStateProvider).value;
+      if (auth != null && auth.uid == booking.mechanicId) {
+        ref.watch(mechanicLocationUpdateProvider(widget.bookingId));
+      }
+
+      // 2. Listen to the mechanic's live location from Firestore
       ref.listen(mechanicLocationStreamProvider(booking.mechanicId!), (previous, next) {
         final mechanicLoc = next.value;
-        if (mechanicLoc != null) {
+        // Ignore initial 0,0 values or null data
+        if (mechanicLoc != null && mechanicLoc.latitude != 0) {
           _updateMapData(booking.latitude, booking.longitude, mechanicLoc.latitude, mechanicLoc.longitude);
         }
       });
     }
 
+    String appBarTitle = role == 'mechanic' ? 'Track User' : 'Track Mechanic';
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Track Mechanic')),
+      appBar: AppBar(title: Text(appBarTitle)),
       body: bookingAsync.when(
         data: (booking) {
           if (booking == null) {
@@ -58,9 +70,9 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
                 ),
                 onMapCreated: (controller) {
                   _controller = controller;
-                  // Trigger initial data load if mechanic location is already available
+                  // Try to show initial data if already available
                   final mechLoc = ref.read(mechanicLocationStreamProvider(booking.mechanicId!)).value;
-                  if (mechLoc != null) {
+                  if (mechLoc != null && mechLoc.latitude != 0) {
                     _updateMapData(booking.latitude, booking.longitude, mechLoc.latitude, mechLoc.longitude);
                   }
                 },
@@ -116,27 +128,34 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
     final mechLatLng = LatLng(mechLat, mechLng);
 
     // 1. Update Markers
-    setState(() {
-      _markers.clear();
-      _markers.add(Marker(
-        markerId: const MarkerId('user'),
-        position: userLatLng,
-        infoWindow: const InfoWindow(title: 'User Location'),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-      ));
-      _markers.add(Marker(
-        markerId: const MarkerId('mechanic'),
-        position: mechLatLng,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-        infoWindow: const InfoWindow(title: 'Mechanic Location'),
-      ));
-    });
+    if (mounted) {
+      setState(() {
+        _markers.clear();
+        _markers.add(Marker(
+          markerId: const MarkerId('user'),
+          position: userLatLng,
+          infoWindow: const InfoWindow(title: 'User Location'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+        ));
+        _markers.add(
+          Marker(
+            markerId: const MarkerId('mechanic'),
+            position: mechLatLng,
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueOrange,
+            ),
+            infoWindow: const InfoWindow(
+              title: 'Mechanic Location',
+            ),
+          ),
+        );
+      });
+    }
 
     // 2. Calculate Distance & ETA
     final double distanceInMeters = Geolocator.distanceBetween(mechLat, mechLng, userLat, userLng);
     final distStr = '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
-    // Assume 40 km/h average speed (approx 666 meters per minute)
-    final minutes = (distanceInMeters / 666).ceil();
+    final minutes = (distanceInMeters / 400).ceil(); // Simple estimate: 400m per min
     final etaStr = minutes <= 1 ? 'Arriving soon' : '$minutes mins';
 
     if (mounted) {
@@ -159,14 +178,7 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
         ),
       );
 
-      if (!_isInitialCameraSet) {
-        _controller!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 80));
-        _isInitialCameraSet = true;
-      } else {
-        // Just move slightly if needed, or keep zoom if preferred
-        // For now, keep it dynamic but with padding
-        _controller!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 80));
-      }
+      _controller!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 80));
     }
 
     // 4. Fetch Route Polyline
@@ -185,8 +197,6 @@ class _LiveTrackingScreenState extends ConsumerState<LiveTrackingScreen> {
             color: Colors.blue,
             width: 5,
             jointType: JointType.round,
-            startCap: Cap.roundCap,
-            endCap: Cap.roundCap,
           ));
         });
       }

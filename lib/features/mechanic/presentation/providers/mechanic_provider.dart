@@ -36,8 +36,8 @@ final mechanicBookingsProvider = StreamProvider<List<BookingEntity>>((ref) {
   return ref.watch(getMechanicBookingsUseCaseProvider).call(user.uid);
 });
 
-final earningsProvider = FutureProvider<double>((ref) async {
+final earningsProvider = StreamProvider<double>((ref) {
   final user = ref.watch(authStateProvider).value;
-  if (user == null) return 0.0;
+  if (user == null) return Stream.value(0.0);
   return ref.watch(getEarningsUseCaseProvider).call(user.uid);
 });

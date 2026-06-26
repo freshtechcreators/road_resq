@@ -68,13 +68,12 @@ class MechanicRepositoryImpl implements MechanicRepository {
   }
 
   @override
-  Future<double> getEarnings(String mechanicId) async {
-    final snapshot = await _firestore
+  Stream<double> getEarnings(String mechanicId) {
+    return _firestore
         .collection('bookings')
         .where('mechanicId', isEqualTo: mechanicId)
         .where('status', isEqualTo: BookingStatus.COMPLETED.name)
-        .get();
-    
-    return snapshot.docs.length * 500.0; 
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length * 500.0);
   }
 }

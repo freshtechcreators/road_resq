@@ -65,7 +65,11 @@ class MechanicDashboardScreen extends ConsumerWidget {
         data: (profile) {
           if (profile == null) return const Center(child: Text('Profile not found'));
           return RefreshIndicator(
-            onRefresh: () => ref.refresh(mechanicProfileProvider.future),
+            onRefresh: () async {
+              ref.invalidate(mechanicProfileProvider);
+              ref.invalidate(earningsProvider);
+              ref.invalidate(mechanicBookingsProvider);
+            },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16.0),
@@ -105,20 +109,25 @@ class MechanicDashboardScreen extends ConsumerWidget {
         ),
         title: Text(profile.name ?? 'No Name', style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(profile.shopName ?? 'Independent Mechanic'),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: profile.isOnline ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            profile.isOnline ? 'ONLINE' : 'OFFLINE',
-            style: TextStyle(
-              color: profile.isOnline ? Colors.green : Colors.red,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: profile.isOnline ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                profile.isOnline ? 'ONLINE' : 'OFFLINE',
+                style: TextStyle(
+                  color: profile.isOnline ? Colors.green : Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

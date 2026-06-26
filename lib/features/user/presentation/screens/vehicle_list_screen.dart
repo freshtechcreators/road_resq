@@ -37,10 +37,7 @@ class VehicleListScreen extends ConsumerWidget {
             icon: const Icon(Icons.warning_amber_rounded, color: Colors.red),
             label: const Text(
               'SOS',
-              style: TextStyle(
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
           ),
           IconButton(
@@ -52,23 +49,15 @@ class VehicleListScreen extends ConsumerWidget {
                   title: const Text('Logout'),
                   content: const Text('Are you sure you want to logout?'),
                   actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Logout', style: TextStyle(color: Colors.red)),
-                    ),
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                    TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Logout', style: TextStyle(color: Colors.red))),
                   ],
                 ),
               );
 
               if (confirmed == true) {
                 await ref.read(authRepositoryProvider).signOut();
-                if (context.mounted) {
-                  context.go('/login');
-                }
+                if (context.mounted) context.go('/login');
               }
             },
           ),
@@ -78,11 +67,7 @@ class VehicleListScreen extends ConsumerWidget {
         children: [
           activeBookingsAsync.when(
             data: (bookings) {
-              final active = bookings
-                  .where((b) =>
-                      b.status != BookingStatus.COMPLETED &&
-                      b.status != BookingStatus.CANCELLED)
-                  .toList();
+              final active = bookings.where((b) => b.status != BookingStatus.COMPLETED && b.status != BookingStatus.CANCELLED).toList();
               if (active.isEmpty) return const SizedBox.shrink();
 
               final booking = active.first;
@@ -91,8 +76,7 @@ class VehicleListScreen extends ConsumerWidget {
                 margin: const EdgeInsets.all(16),
                 child: ListTile(
                   leading: const Icon(Icons.warning, color: Colors.red),
-                  title: const Text('Ongoing Emergency Request',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  title: const Text('Ongoing Emergency Request', style: TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text('Status: ${booking.status.name}'),
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () => context.push('/booking-status/${booking.bookingId}'),
@@ -111,19 +95,14 @@ class VehicleListScreen extends ConsumerWidget {
                       itemBuilder: (context, index) {
                         final vehicle = vehicles[index];
                         return ListTile(
-                          leading: Icon(vehicle.type == VehicleType.car
-                              ? Icons.directions_car
-                              : Icons.motorcycle),
+                          leading: Icon(vehicle.type == VehicleType.car ? Icons.directions_car : Icons.motorcycle),
                           title: Text(vehicle.name),
                           subtitle: Text(vehicle.registrationNumber),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => ref
-                                .read(vehicleRepositoryProvider)
-                                .deleteVehicle(vehicle.id),
+                            onPressed: () => ref.read(vehicleRepositoryProvider).deleteVehicle(vehicle.id),
                           ),
-                          onTap: () =>
-                              context.push('/edit-vehicle', extra: vehicle),
+                          onTap: () => context.push('/edit-vehicle', extra: vehicle),
                         );
                       },
                     ),

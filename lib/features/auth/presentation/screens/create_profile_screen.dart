@@ -26,7 +26,6 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
   File? _imageFile;
   bool _isLoading = false;
   String? _base64Image;
-  bool _isEditMode = false;
   bool _hasInitialized = false;
 
   @override
@@ -65,6 +64,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
 
     final role = ref.read(userRoleProvider);
     final saveProfile = ref.read(saveProfileUseCaseProvider);
+    final bool isEditMode = _checkIsEditMode();
 
     try {
       if (_imageFile != null) {
@@ -84,7 +84,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
         ref.invalidate(userProfileProvider);
         
         if (!mounted) return;
-        if (_isEditMode) {
+        if (isEditMode) {
            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile Updated!')));
            context.pop();
         } else {
@@ -107,7 +107,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
         ref.invalidate(mechanicProfileProvider);
 
         if (!mounted) return;
-        if (_isEditMode) {
+        if (isEditMode) {
            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile Updated!')));
            context.pop();
         } else {
@@ -124,39 +124,64 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
     }
   }
 
+  bool _checkIsEditMode() {
+    final role = ref.read(userRoleProvider);
+    if (role == 'user') {
+      return ref.read(userProfileProvider).value != null;
+    } else {
+      return ref.read(mechanicProfileProvider).value != null;
+    }
+  }
+
   void _initializeData(String role) {
     if (_hasInitialized) return;
     
     if (role == 'user') {
       final profile = ref.read(userProfileProvider).value;
       if (profile != null) {
-        _isEditMode = true;
         _nameController.text = profile.name ?? '';
         _emailController.text = profile.email ?? '';
         _base64Image = profile.profileImage;
+        _hasInitialized = true;
       }
     } else {
       final profile = ref.read(mechanicProfileProvider).value;
       if (profile != null) {
-        _isEditMode = true;
         _nameController.text = profile.name ?? '';
         _emailController.text = profile.email ?? '';
         _shopNameController.text = profile.shopName ?? '';
         _experienceController.text = profile.experience ?? '';
         _servicesController.text = profile.services?.join(', ') ?? '';
         _base64Image = profile.profileImage;
+        _hasInitialized = true;
       }
     }
-    _hasInitialized = true;
   }
 
   @override
   Widget build(BuildContext context) {
     final role = ref.watch(userRoleProvider);
-    _initializeData(role);
+    final isEditMode = _checkIsEditMode();
+    
+    // Watch profiles to trigger re-build when data is loaded
+    if (role == 'user') {
+      ref.watch(userProfileProvider).whenData((profile) {
+        if (profile != null && !_hasInitialized) {
+          _initializeData(role);
+          if (mounted) setState(() {});
+        }
+      });
+    } else {
+      ref.watch(mechanicProfileProvider).whenData((profile) {
+        if (profile != null && !_hasInitialized) {
+          _initializeData(role);
+          if (mounted) setState(() {});
+        }
+      });
+    }
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEditMode ? 'Edit Profile' : 'Create Profile')),
+      appBar: AppBar(title: Text(isEditMode ? 'Edit Profile' : 'Create Profile')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Form(
@@ -239,7 +264,7 @@ class _CreateProfileScreenState extends ConsumerState<CreateProfileScreen> {
                   onPressed: _isLoading ? null : _saveProfile,
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(_isEditMode ? 'Update Profile' : 'Complete Profile'),
+                      : Text(isEditMode ? 'Update Profile' : 'Complete Profile'),
                 ),
               ),
             ],
